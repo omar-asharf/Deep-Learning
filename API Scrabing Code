@@ -1,0 +1,307 @@
+"""
+Open Library API scraper for building text classification datasets.
+Extracts book descriptions and standardizes them for NLP pipelines.
+"""
+
+import csv
+import logging
+import math
+import random
+import re
+import time
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Optional
+
+import pandas as pd
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+# Configure standard logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+# Configuration constants
+OUTPUT_FILE = Path("dl_books_dataset.csv")
+TARGET_BOOKS = 10_500
+MIN_WORDS = 80
+MAX_WORKERS = 8
+SLEEP_MIN = 0.10
+SLEEP_MAX = 0.35
+REQUEST_TIMEOUT = (10, 25)
+MAX_RETRIES = 3
+
+# Genre quotas configured for dataset balance
+GENRES: dict[str, int] = {
+    "Science Fiction": 700,
+    "Fantasy": 700,
+    "Mystery": 650,
+    "Romance": 650,
+    "Historical Fiction": 600,
+    "Horror": 550,
+    "Thriller": 550,
+    "Adventure": 500,
+    "Classic Literature": 450,
+    "Graphic Novel": 350,
+    "Short Stories": 350,
+    "Biography": 550,
+    "Self Help": 500,
+    "History": 500,
+    "Science": 450,
+    "Psychology": 400,
+    "Philosophy": 400,
+    "True Crime": 350,
+    "Travel": 350,
+    "Cooking": 300,
+    "Children": 450,
+    "Young Adult": 450,
+}
+
+# API Endpoints
+OL_SEARCH_URL = "https://openlibrary.org/search.json"
+OL_WORKS_URL = "https://openlibrary.org{works_key}.json"
+
+# Pre-compiled regex patterns for text normalization
+RE_HTML_TAG = re.compile(r"<[^>]+>")
+RE_WIKI_MARKUP = re.compile(r"\[\[.*?\]\]|\{\{.*?\}\}|'{2,3}")
+RE_CONTROL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+RE_MULTI_SPACE = re.compile(r"[ \t]{2,}")
+RE_MULTI_NL = re.compile(r"\n{3,}")
+RE_URL = re.compile(r"https?://\S+|www\.\S+")
+RE_LEADING_DASH = re.compile(r"^\s*[-–—]+\s*", re.MULTILINE)
+
+
+def build_session() -> requests.Session:
+    """Initialize a robust HTTP session with exponential backoff retry logic."""
+    session = requests.Session()
+    retry = Retry(
+        total=MAX_RETRIES,
+        backoff_factor=1.5,
+        status_forcelist={429, 500, 502, 503, 504},
+        allowed_methods={"GET"},
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (compatible; DatasetScraper/1.0;)",
+        "Accept": "application/json",
+    })
+    return session
+
+
+@dataclass
+class BookRecord:
+    title: str
+    target_genre: str
+    text_sample: str
+    word_count: int = field(init=False)
+
+    def __post_init__(self):
+        self.word_count = len(self.text_sample.split())
+
+
+def clean_text(raw: str) -> str:
+    """Apply text normalization and remove markup/special characters."""
+    text = RE_HTML_TAG.sub(" ", raw)
+    text = RE_WIKI_MARKUP.sub("", text)
+    text = RE_URL.sub("", text)
+    text = RE_CONTROL.sub("", text)
+    
+    # Normalize punctuation and specific unicode anomalies
+    text = (text.replace("\u2018", "'").replace("\u2019", "'")
+                .replace("\u201c", '"').replace("\u201d", '"')
+                .replace("\u2013", "-").replace("\u2014", "-")
+                .replace("\xa0", " "))
+    
+    text = RE_LEADING_DASH.sub("", text)
+    text = RE_MULTI_SPACE.sub(" ", text)
+    text = RE_MULTI_NL.sub("\n\n", text)
+    
+    return text.strip()
+
+
+# Global concurrency limit
+request_semaphore = threading.Semaphore(MAX_WORKERS)
+
+def execute_request(session: requests.Session, url: str, params: dict = None) -> Optional[dict]:
+    """Thread-safe GET request handling with rate limiting."""
+    with request_semaphore:
+        time.sleep(random.uniform(SLEEP_MIN, SLEEP_MAX))
+        try:
+            response = session.get(url, params=params, timeout=REQUEST_TIMEOUT)
+            if response.status_code == 200:
+                return response.json()
+            logger.debug("HTTP %s for %s", response.status_code, url)
+            return None
+        except requests.RequestException as exc:
+            logger.debug("Request failed for %s: %s", url, exc)
+            return None
+
+
+def fetch_description(session: requests.Session, works_key: str) -> str:
+    """Extract the main description or excerpt for a specific work."""
+    url = OL_WORKS_URL.format(works_key=works_key)
+    data = execute_request(session, url)
+    
+    if not data:
+        return ""
+
+    description = data.get("description", "")
+    if isinstance(description, dict):
+        description = description.get("value", "")
+
+    # Fallback to excerpts if standard description is missing
+    if not description:
+        excerpts = data.get("excerpts", [])
+        if excerpts:
+            description = " ".join(
+                (e.get("excerpt", {}).get("value", "") or e.get("excerpt", ""))
+                for e in excerpts[:3] if isinstance(e, dict)
+            )
+
+    return str(description)
+
+
+def search_genre(session: requests.Session, genre: str, limit: int) -> list[dict]:
+    """Fetch book metadata for a specific genre using pagination."""
+    fetch_factor = 4
+    total_needed = min(limit * fetch_factor, 2000)
+    page_size = 100
+    pages = math.ceil(total_needed / page_size)
+
+    candidates = []
+    for page in range(1, pages + 1):
+        params = {
+            "subject": genre.lower().replace(" ", "_"),
+            "fields": "key,title,first_sentence,subject",
+            "limit": page_size,
+            "offset": (page - 1) * page_size,
+            "lang": "eng",
+        }
+        
+        data = execute_request(session, OL_SEARCH_URL, params=params)
+        if not data or not data.get("docs"):
+            break
+            
+        candidates.extend(data["docs"])
+        logger.info("[%s] Fetched page %d/%d (Total candidates: %d)", genre, page, pages, len(candidates))
+        
+        if len(candidates) >= total_needed:
+            break
+
+    return candidates
+
+
+def process_book(session: requests.Session, raw_data: dict, genre: str) -> Optional[BookRecord]:
+    """Process a raw API response into a validated BookRecord."""
+    title = (raw_data.get("title") or "").strip()
+    if not title:
+        return None
+
+    works_key = raw_data.get("key", "")
+    text = fetch_description(session, works_key) if works_key else ""
+
+    # Append first sentence if base text is insufficient
+    if not text or len(text.split()) < MIN_WORDS:
+        fallback_sentence = raw_data.get("first_sentence", "")
+        if isinstance(fallback_sentence, list):
+            fallback_sentence = " ".join(fallback_sentence)
+        elif isinstance(fallback_sentence, dict):
+            fallback_sentence = fallback_sentence.get("value", "")
+        
+        if fallback_sentence:
+            text = f"{text} {fallback_sentence}".strip()
+
+    cleaned_text = clean_text(text)
+    if len(cleaned_text.split()) < MIN_WORDS:
+        return None
+
+    return BookRecord(
+        title=clean_text(title),
+        target_genre=genre,
+        text_sample=cleaned_text,
+    )
+
+
+def process_genre(genre: str, target_limit: int) -> list[BookRecord]:
+    """Orchestrate multi-threaded data collection for a single genre."""
+    logger.info("Starting processing for genre: %s (Target: %d)", genre, target_limit)
+    
+    session = build_session()
+    candidates = search_genre(session, genre, target_limit)
+    
+    records: list[BookRecord] = []
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
+        futures = {
+            pool.submit(process_book, build_session(), candidate, genre): candidate
+            for candidate in candidates
+        }
+        
+        for future in as_completed(futures):
+            try:
+                record = future.result()
+                if record:
+                    records.append(record)
+                    if len(records) >= target_limit:
+                        # Cancel remaining tasks once quota is met
+                        for f in futures:
+                            f.cancel()
+                        break
+            except Exception as exc:
+                logger.debug("Worker failed: %s", exc)
+
+    logger.info("Completed genre: %s (Collected: %d)", genre, len(records))
+    return records[:target_limit]
+
+
+def main() -> None:
+    """Main execution flow for dataset generation."""
+    logger.info("Initializing dataset extraction. Target: %d records.", TARGET_BOOKS)
+    
+    dataset_records: list[BookRecord] = []
+
+    for genre, limit in GENRES.items():
+        records = process_genre(genre, limit)
+        dataset_records.extend(records)
+        logger.info("Global progress: %d records collected.", len(dataset_records))
+
+    logger.info("Constructing DataFrame.")
+    df = pd.DataFrame([
+        {
+            "title": record.title,
+            "target_genre": record.target_genre,
+            "text_sample": record.text_sample,
+        }
+        for record in dataset_records
+    ])
+
+    # Deduplication process
+    initial_count = len(df)
+    df["title_norm"] = df["title"].str.lower().str.strip()
+    df.drop_duplicates(subset="title_norm", keep="first", inplace=True)
+    df.drop(columns="title_norm", inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    
+    logger.info("Deduplication complete: removed %d records.", initial_count - len(df))
+
+    # Final validation pass
+    df = df[df["text_sample"].str.split().str.len() >= MIN_WORDS]
+    df.reset_index(drop=True, inplace=True)
+
+    logger.info("Final genre distribution:\n%s", df["target_genre"].value_counts().to_string())
+
+    df.to_csv(OUTPUT_FILE, index=False, quoting=csv.QUOTE_ALL, encoding="utf-8")
+    logger.info("Successfully exported %d records to %s", len(df), OUTPUT_FILE.resolve())
+
+
+if __name__ == "__main__":
+    main()
