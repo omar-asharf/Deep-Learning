@@ -1,8 +1,10 @@
 {
-  "model": "GRU",
-  "validation_accuracy": 0.45019155740737915,
-  "test_accuracy": 0.45977011494252873,
-  "test_macro_f1": 0.3776716346621983,
-  "test_weighted_f1": 0.43320472085135736,
-  "epochs_completed": 7
+  "dataset": "BooksClassifier_dataset_reduced_12class.csv",
+  "model": "Hybrid GRU",
+  "validation_accuracy": 0.5724563002586365,
+  "test_accuracy": 0.5708418891170431,
+  "test_macro_f1": 0.5127103472887646,
+  "test_weighted_f1": 0.5620052234720797,
+  "epochs_completed": 6,
+  "best_validation_accuracy_epoch": 3
 }

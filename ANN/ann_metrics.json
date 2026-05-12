@@ -1,8 +1,9 @@
 {
+  "dataset": "BooksClassifier_dataset_reduced_12class.csv",
   "model": "ANN",
-  "validation_accuracy": 0.5,
-  "test_accuracy": 0.5105363984674329,
-  "test_macro_f1": 0.4350465001340591,
-  "test_weighted_f1": 0.48704544672960626,
+  "validation_accuracy": 0.5858170606372045,
+  "test_accuracy": 0.5708418891170431,
+  "test_macro_f1": 0.527698862457695,
+  "test_weighted_f1": 0.5621048480383194,
   "epochs_completed": 10
 }
