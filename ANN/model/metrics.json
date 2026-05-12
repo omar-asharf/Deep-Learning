@@ -1,0 +1,309 @@
+{
+  "data_file": "data/BooksClassifier_dataset_cleaned.csv.xls",
+  "random_state": 42,
+  "selection_metric": "accuracy",
+  "data_checks": {
+    "initial_rows": 6967,
+    "rows_after_dropna": 6967,
+    "rows_after_empty_text_filter": 6967,
+    "rows_after_duplicate_text_filter": 6960,
+    "exact_duplicate_rows_removed": 4,
+    "duplicate_text_rows_removed": 7,
+    "conflicting_duplicate_texts": 3,
+    "rows_with_class_name_terms": 2545
+  },
+  "rows_used": 6960,
+  "classes": 22,
+  "class_names": [
+    "Adventure",
+    "Biography",
+    "Children",
+    "Classic Literature",
+    "Cooking",
+    "Fantasy",
+    "Graphic Novel",
+    "Historical Fiction",
+    "History",
+    "Horror",
+    "Mystery",
+    "Philosophy",
+    "Psychology",
+    "Romance",
+    "Science",
+    "Science Fiction",
+    "Self Help",
+    "Short Stories",
+    "Thriller",
+    "Travel",
+    "True Crime",
+    "Young Adult"
+  ],
+  "train_rows": 4454,
+  "validation_rows": 1114,
+  "train_validation_rows": 5568,
+  "test_rows": 1392,
+  "experiments": {
+    "ANN_64_unigram": {
+      "hidden_layers": [
+        64
+      ],
+      "feature_builder": "word",
+      "alpha": 0.0001,
+      "sample_weight": null,
+      "validation": {
+        "accuracy": 0.4713,
+        "macro_f1": 0.3921,
+        "weighted_f1": 0.4423
+      },
+      "ann_iterations": 18
+    },
+    "ANN_128_word_bigram": {
+      "hidden_layers": [
+        128
+      ],
+      "feature_builder": "word_bigram",
+      "alpha": 0.0003,
+      "sample_weight": null,
+      "validation": {
+        "accuracy": 0.474,
+        "macro_f1": 0.414,
+        "weighted_f1": 0.4543
+      },
+      "ann_iterations": 15
+    },
+    "ANN_128_word_char": {
+      "hidden_layers": [
+        128
+      ],
+      "feature_builder": "word_char",
+      "alpha": 0.0005,
+      "sample_weight": null,
+      "validation": {
+        "accuracy": 0.4892,
+        "macro_f1": 0.4363,
+        "weighted_f1": 0.4716
+      },
+      "ann_iterations": 12
+    },
+    "ANN_128_word_char_balanced": {
+      "hidden_layers": [
+        128
+      ],
+      "feature_builder": "word_char",
+      "alpha": 0.0005,
+      "sample_weight": "balanced",
+      "validation": {
+        "accuracy": 0.4776,
+        "macro_f1": 0.4559,
+        "weighted_f1": 0.4833
+      },
+      "ann_iterations": 11
+    }
+  },
+  "best_model": "ANN_128_word_char",
+  "best_validation_score": 0.4892,
+  "test": {
+    "accuracy": 0.505,
+    "macro_f1": 0.4534,
+    "weighted_f1": 0.489
+  },
+  "classification_report": {
+    "Adventure": {
+      "precision": 0.3103448275862069,
+      "recall": 0.1875,
+      "f1-score": 0.23376623376623376,
+      "support": 48.0
+    },
+    "Biography": {
+      "precision": 0.43661971830985913,
+      "recall": 0.6739130434782609,
+      "f1-score": 0.5299145299145299,
+      "support": 92.0
+    },
+    "Children": {
+      "precision": 0.21428571428571427,
+      "recall": 0.1,
+      "f1-score": 0.13636363636363635,
+      "support": 30.0
+    },
+    "Classic Literature": {
+      "precision": 0.3333333333333333,
+      "recall": 0.24444444444444444,
+      "f1-score": 0.28205128205128205,
+      "support": 45.0
+    },
+    "Cooking": {
+      "precision": 0.9032258064516129,
+      "recall": 0.7777777777777778,
+      "f1-score": 0.835820895522388,
+      "support": 36.0
+    },
+    "Fantasy": {
+      "precision": 0.48598130841121495,
+      "recall": 0.48598130841121495,
+      "f1-score": 0.48598130841121495,
+      "support": 107.0
+    },
+    "Graphic Novel": {
+      "precision": 0.6285714285714286,
+      "recall": 0.4888888888888889,
+      "f1-score": 0.55,
+      "support": 45.0
+    },
+    "Historical Fiction": {
+      "precision": 0.38372093023255816,
+      "recall": 0.4125,
+      "f1-score": 0.39759036144578314,
+      "support": 80.0
+    },
+    "History": {
+      "precision": 0.3333333333333333,
+      "recall": 0.28846153846153844,
+      "f1-score": 0.30927835051546393,
+      "support": 52.0
+    },
+    "Horror": {
+      "precision": 0.6935483870967742,
+      "recall": 0.5584415584415584,
+      "f1-score": 0.6187050359712231,
+      "support": 77.0
+    },
+    "Mystery": {
+      "precision": 0.5357142857142857,
+      "recall": 0.6578947368421053,
+      "f1-score": 0.5905511811023622,
+      "support": 114.0
+    },
+    "Philosophy": {
+      "precision": 0.5254237288135594,
+      "recall": 0.5961538461538461,
+      "f1-score": 0.5585585585585585,
+      "support": 52.0
+    },
+    "Psychology": {
+      "precision": 0.46153846153846156,
+      "recall": 0.13953488372093023,
+      "f1-score": 0.21428571428571427,
+      "support": 43.0
+    },
+    "Romance": {
+      "precision": 0.5393939393939394,
+      "recall": 0.7606837606837606,
+      "f1-score": 0.6312056737588653,
+      "support": 117.0
+    },
+    "Science": {
+      "precision": 0.2,
+      "recall": 0.04,
+      "f1-score": 0.06666666666666667,
+      "support": 25.0
+    },
+    "Science Fiction": {
+      "precision": 0.46616541353383456,
+      "recall": 0.5166666666666667,
+      "f1-score": 0.4901185770750988,
+      "support": 120.0
+    },
+    "Self Help": {
+      "precision": 0.6329113924050633,
+      "recall": 0.7936507936507936,
+      "f1-score": 0.704225352112676,
+      "support": 63.0
+    },
+    "Short Stories": {
+      "precision": 0.4186046511627907,
+      "recall": 0.46153846153846156,
+      "f1-score": 0.43902439024390244,
+      "support": 39.0
+    },
+    "Thriller": {
+      "precision": 0.4418604651162791,
+      "recall": 0.34545454545454546,
+      "f1-score": 0.3877551020408163,
+      "support": 55.0
+    },
+    "Travel": {
+      "precision": 0.5,
+      "recall": 0.2653061224489796,
+      "f1-score": 0.3466666666666667,
+      "support": 49.0
+    },
+    "True Crime": {
+      "precision": 0.7735849056603774,
+      "recall": 0.7192982456140351,
+      "f1-score": 0.7454545454545455,
+      "support": 57.0
+    },
+    "Young Adult": {
+      "precision": 0.40816326530612246,
+      "recall": 0.43478260869565216,
+      "f1-score": 0.42105263157894735,
+      "support": 46.0
+    },
+    "accuracy": 0.5050287356321839,
+    "macro avg": {
+      "precision": 0.48301478619348875,
+      "recall": 0.4522215105169755,
+      "f1-score": 0.45341075879575343,
+      "support": 1392.0
+    },
+    "weighted avg": {
+      "precision": 0.49632898382730123,
+      "recall": 0.5050287356321839,
+      "f1-score": 0.48900896327781507,
+      "support": 1392.0
+    }
+  },
+  "top_confusions": [
+    {
+      "true_genre": "Fantasy",
+      "predicted_genre": "Science Fiction",
+      "count": 17
+    },
+    {
+      "true_genre": "Psychology",
+      "predicted_genre": "Self Help",
+      "count": 17
+    },
+    {
+      "true_genre": "History",
+      "predicted_genre": "Biography",
+      "count": 14
+    },
+    {
+      "true_genre": "Science Fiction",
+      "predicted_genre": "Fantasy",
+      "count": 14
+    },
+    {
+      "true_genre": "Thriller",
+      "predicted_genre": "Mystery",
+      "count": 13
+    },
+    {
+      "true_genre": "Adventure",
+      "predicted_genre": "Fantasy",
+      "count": 11
+    },
+    {
+      "true_genre": "Science",
+      "predicted_genre": "Science Fiction",
+      "count": 11
+    },
+    {
+      "true_genre": "Romance",
+      "predicted_genre": "Historical Fiction",
+      "count": 10
+    },
+    {
+      "true_genre": "Classic Literature",
+      "predicted_genre": "Historical Fiction",
+      "count": 9
+    },
+    {
+      "true_genre": "Historical Fiction",
+      "predicted_genre": "Biography",
+      "count": 9
+    }
+  ]
+}
