@@ -1,0 +1,8 @@
+{
+  "model": "ANN",
+  "validation_accuracy": 0.5,
+  "test_accuracy": 0.5105363984674329,
+  "test_macro_f1": 0.4350465001340591,
+  "test_weighted_f1": 0.48704544672960626,
+  "epochs_completed": 10
+}

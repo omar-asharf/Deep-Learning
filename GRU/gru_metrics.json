@@ -1,0 +1,8 @@
+{
+  "model": "GRU",
+  "validation_accuracy": 0.45019155740737915,
+  "test_accuracy": 0.45977011494252873,
+  "test_macro_f1": 0.3776716346621983,
+  "test_weighted_f1": 0.43320472085135736,
+  "epochs_completed": 7
+}
