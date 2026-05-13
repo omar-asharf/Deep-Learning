@@ -1,0 +1,32 @@
+========================================================================
+  Book Genre Classifier (12-class) — Test Results
+========================================================================
+
+Dataset             : BooksClassifier_dataset_reduced_12class.csv
+Text column         : model_text
+High-conf only      : False
+
+Test Accuracy       : 0.6148  (61.48%)
+Weighted Precision  : 0.6333
+Weighted Recall     : 0.6148
+Weighted F1-score   : 0.6159
+Macro    F1-score   : 0.5936
+
+                           precision    recall  f1-score   support
+
+ Children and Young Adult     0.4130    0.4043    0.4086        47
+                  Cooking     0.8333    0.9375    0.8824        16
+       Crime and Suspense     0.7639    0.6111    0.6790        90
+   Graphic and Short Form     0.4605    0.7778    0.5785        45
+    History and Biography     0.5309    0.4778    0.5029        90
+         Literary Fiction     0.4407    0.6341    0.5200        41
+Mind and Self Improvement     0.9259    0.7463    0.8264        67
+               Philosophy     0.7667    0.7188    0.7419        32
+                  Romance     0.7867    0.7763    0.7815        76
+                  Science     0.3333    0.1250    0.1818         8
+      Speculative Fiction     0.5446    0.6111    0.5759        90
+     Travel and Adventure     0.5294    0.3830    0.4444        47
+
+                 accuracy                         0.6148       649
+                macro avg     0.6107    0.6002    0.5936       649
+             weighted avg     0.6333    0.6148    0.6159       649
