@@ -1,0 +1,31 @@
+Best model: outputs/keras_lstm_books_classifier/best_lstm_lr0.0005_bs32_cwsqrt.keras
+
+Test metrics:
+- Accuracy: 0.5423728813559322
+- Weighted precision: 0.5519223220196406
+- Weighted recall: 0.5423728813559322
+- Weighted F1: 0.5426152467906877
+- Macro F1: 0.54
+- Test loss: 3.485921859741211
+- Test samples: 649
+
+Classification report:
+
+                           precision    recall  f1-score   support
+
+ Children and Young Adult       0.31      0.34      0.32        47
+                  Cooking       0.79      0.94      0.86        16
+       Crime and Suspense       0.71      0.61      0.66        90
+   Graphic and Short Form       0.51      0.51      0.51        45
+    History and Biography       0.41      0.36      0.38        90
+         Literary Fiction       0.43      0.49      0.45        41
+Mind and Self Improvement       0.75      0.70      0.72        67
+               Philosophy       0.67      0.62      0.65        32
+                  Romance       0.64      0.71      0.67        76
+                  Science       1.00      0.25      0.40         8
+      Speculative Fiction       0.50      0.54      0.52        90
+     Travel and Adventure       0.36      0.40      0.38        47
+
+                 accuracy                           0.54       649
+                macro avg       0.59      0.54      0.54       649
+             weighted avg       0.55      0.54      0.54       649
